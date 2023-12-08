@@ -1,39 +1,60 @@
-#include <unistd.h>
-#include <errno.h>
-#include <netinet/in.h>
-#include <sys/socket.h>
-#include <cstdlib>
-#include <cstdio>
-#include <error.h>
 #include <iostream>
+#include <cstring>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <unistd.h>
 
-const int ONE = 1;
-
-int main(int argc, char** argv){
-    sockaddr_in localAdress {
-        .sin_family = AF_INET,
-        .sin_port = htons(atoi(argv[1])),
-        .sin_addr = {htonl(INADDR_ANY)}
-    };
-
-    int servSock = socket(PF_INET, SOCK_STREAM, 0);
-    setsockopt(servSock, SOL_SOCKET, SO_REUSEADDR, &ONE, sizeof(ONE));
-
-    if (bind(servSock, (sockaddr *) &localAdress, sizeof(localAdress))){
-        error(1, errno, "Could not bind!");
+int main() {
+    // Tworzenie gniazda serwera
+    int serverSocket = socket(AF_INET, SOCK_STREAM, 0);
+    if (serverSocket == -1) {
+        std::cerr << "Błąd podczas tworzenia gniazda." << std::endl;
+        return -1;
     }
 
-    std::cout << "Listening!\n";
-    listen(servSock, 1);
+    // Struktura opisująca adres serwera
+    sockaddr_in serverAddress;
+    serverAddress.sin_family = AF_INET;
+    serverAddress.sin_port = htons(12345); // Port serwera
+    serverAddress.sin_addr.s_addr = INADDR_ANY; // Akceptuj połączenia od dowolnego adresu
 
-    int ackSock = accept(servSock, NULL, NULL);
-    std::cout << "Connection accepted\n";
-    char data[255]{};
+    // Przypisanie adresu do gniazda serwera
+    if (bind(serverSocket, (struct sockaddr*)&serverAddress, sizeof(serverAddress)) == -1) {
+        std::cerr << "Błąd podczas przypisywania adresu do gniazda." << std::endl;
+        close(serverSocket);
+        return -1;
+    }
 
-    int len = read(ackSock, data, sizeof(data) - 1);
-    std::cout << "Received: " << data << std::endl;
+    // Nasłuchiwanie na gnieździe serwera
+    if (listen(serverSocket, 5) == -1) {
+        std::cerr << "Błąd podczas nasłuchiwania na gnieździe." << std::endl;
+        close(serverSocket);
+        return -1;
+    }
 
-    close(servSock);
+    std::cout << "Serwer nasłuchuje na porcie 12345..." << std::endl;
+
+    // Akceptowanie połączeń od klientów
+    int clientSocket = accept(serverSocket, nullptr, nullptr);
+    if (clientSocket == -1) {
+        std::cerr << "Błąd podczas akceptowania połączenia." << std::endl;
+        close(serverSocket);
+        return -1;
+    }
+
+    // Odbieranie wiadomości od klienta
+    char buffer[1024];
+    ssize_t bytesRead;
+    while ((bytesRead = recv(clientSocket, buffer, sizeof(buffer), 0)))
+    {
+        //bytesRead = recv(clientSocket, buffer, sizeof(buffer), 0);
+        buffer[bytesRead] = '\0';
+        std::cout << "Otrzymana wiadomość od klienta: " << buffer << std::endl;
+    }
+
+    // Zamykanie gniazda klienta i serwera
+    close(clientSocket);
+    close(serverSocket);
 
     return 0;
 }

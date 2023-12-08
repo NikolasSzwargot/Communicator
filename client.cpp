@@ -1,32 +1,42 @@
-#include <arpa/inet.h>
-#include <unistd.h>
-#include <errno.h>
-#include <netinet/in.h>
-#include <sys/socket.h>
-#include <cstdlib>
-#include <cstdio>
-#include <error.h>
 #include <iostream>
+#include <cstring>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <unistd.h>
+#include <string>
+#include <arpa/inet.h>
 
-int main(int argc, char** argv){
-    int sock = socket(AF_INET, SOCK_STREAM, 0);
-
-    sockaddr_in serverAddress;
-
-    serverAddress.sin_family = AF_INET;
-    serverAddress.sin_port = htons(atoi(argv[2]));
-    serverAddress.sin_addr.s_addr = inet_addr(argv[1]);
-
-    if (connect(sock, (struct sockaddr *)& serverAddress, sizeof(serverAddress)))
-    {
-        error(1, errno, "Failed to connect");
+int main() {
+    // Tworzenie gniazda klienta
+    int clientSocket = socket(AF_INET, SOCK_STREAM, 0);
+    if (clientSocket == -1) {
+        std::cerr << "Błąd podczas tworzenia gniazda." << std::endl;
+        return -1;
     }
 
-    char data[] = "Message to server";
-    std::cout << "Message to be sent: " << data << std::endl;
-    write(sock, data, sizeof(data));
+    // Struktura opisująca adres serwera
+    sockaddr_in serverAddress;
+    serverAddress.sin_family = AF_INET;
+    serverAddress.sin_port = htons(12345); // Port serwera
+    inet_pton(AF_INET, "127.0.0.1", &serverAddress.sin_addr); // Adres IP serwera
 
-    close(sock);
+    // Nawiązywanie połączenia z serwerem
+    if (connect(clientSocket, (struct sockaddr*)&serverAddress, sizeof(serverAddress)) == -1) {
+        std::cerr << "Błąd podczas nawiązywania połączenia z serwerem." << std::endl;
+        close(clientSocket);
+        return -1;
+    }
+
+    // Wysyłanie wiadomości do serwera
+    std::string message;
+    while (message != "end") {
+        std::cout << "Wprowadz wiadomosc: ";
+        std::getline(std::cin, message);
+        send(clientSocket, message.c_str(), message.length(), 0);
+    }
+
+    // Zamykanie gniazda klienta
+    close(clientSocket);
+
     return 0;
-    
 }
