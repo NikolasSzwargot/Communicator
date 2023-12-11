@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Messenger</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1>Simple Messenger</h1>
+    </header>
+
+    <section id="loginSection">
+        <form id="loginForm">
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" required>
+
+            <button type="button" onclick="login()">Log In</button>
+        </form>
+    </section>
+
+    <section id="messengerSection" style="display: none;">
+        <h2>Friends List</h2>
+        <ul id="friendsList">
+            <!-- List of friends will be dynamically populated here -->
+        </ul>
+    </section>
+
+    <section id="chatSection" style="display: none;">
+        <h2 id="chatTitle">Chat with </h2>
+        <div id="chatMessages"></div>
+        <form id="sendMessageForm">
+            <textarea id="messageInput" placeholder="Type your message..."></textarea>
+            <button type="button" onclick="sendMessage()">Send</button>
+        </form>
+    </section>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Change the host and port to match your server configuration
+            const socket = io('http://localhost:5000');
+
+            function showReceivedMessage(msg) {
+                const chatMessages = document.getElementById('chatMessages');
+                const messageBubble = document.createElement('div');
+                messageBubble.textContent = msg;
+                messageBubble.classList.add('message', 'other-message');
+                chatMessages.appendChild(messageBubble);
+            }
+
+            socket.on('chat message', (msg) => {
+                showReceivedMessage(msg);
+            });
+        });
+
+        function login() {
+            var username = document.getElementById('username').value;
+            alert('Logged in successfully as ' + username);
+
+            document.getElementById('loginSection').style.display = 'none';
+            document.getElementById('messengerSection').style.display = 'block';
+
+            // Generate a list of 5 sample friends
+            var friendsList = document.getElementById('friendsList');
+            for (var i = 1; i <= 5; i++) {
+                var friend = document.createElement('li');
+                friend.textContent = 'Friend ' + i;
+                friend.addEventListener('click', function () {
+                    showChat(this.textContent);
+                });
+                friendsList.appendChild(friend);
+            }
+        }
+
+        function showChat(friendName) {
+            document.getElementById('messengerSection').style.display = 'none';
+            document.getElementById('chatSection').style.display = 'block';
+            document.getElementById('chatTitle').textContent = 'Chat with ' + friendName;
+        }
+
+        function sendMessage() {
+            var messageInput = document.getElementById('messageInput');
+            var messageText = messageInput.value;
+
+            if (messageText.trim() !== '') {
+                const chatMessages = document.getElementById('chatMessages');
+                const messageBubble = document.createElement('div');
+                messageBubble.textContent = messageText;
+                messageBubble.classList.add('message', 'my-message');
+                chatMessages.appendChild(messageBubble);
+
+                // Send the message to the server
+                const socket = io('http://localhost:5000');
+                socket.emit('chat message', messageText);
+
+                // Clear the input field
+                messageInput.value = '';
+            }
+        }
+    </script>
+</body>
+</html>
