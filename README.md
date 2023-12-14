@@ -8,7 +8,7 @@
 ```
 sudo apt-get install cmake
 ```
-## Submodules update:
+## Submodules init and update:
 ```
 git submodule update --init --recursive
 ```
@@ -17,9 +17,5 @@ git submodule update --init --recursive
 ```
 cd server
 cmake .
-```
-
-## Other
-```
-git submodule add https://github.com/nlohmann/json.git json/
+make
 ```
