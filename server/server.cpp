@@ -16,6 +16,37 @@ void *handleClient(void *arg) {
     std::ifstream file("usersData/usersInfo.json");
     json data = json::parse(file);
 
+    while ((bytesRead = recv(clientSocket, buffer, sizeof(buffer), 0)))
+    {
+        buffer[bytesRead] = '\0';
+
+        //Parsing login data from client
+        json loginData = json::parse(buffer);
+        std::string username = loginData["username"];
+        bool successfullLogin = false;
+
+        for (const auto &user : data["usersInfo"]) {
+            if (user["username"] == username) {
+                successfullLogin = true;
+                break;
+            }
+        }
+
+        std::string loginResponse;
+        if (successfullLogin)
+        {
+            loginResponse = "login sucess";
+            send(clientSocket, loginResponse.c_str(), loginResponse.size(), 0);
+            break;
+        }
+        else {
+            loginResponse = "login failure";
+            send(clientSocket, loginResponse.c_str(), loginResponse.size(), 0);
+        }
+        
+    }
+    
+
     while ((bytesRead = recv(clientSocket, buffer, sizeof(buffer), 0)) > 0) {
         buffer[bytesRead] = '\0';
         std::cout << "Otrzymana wiadomość od klienta: " << buffer << std::endl;

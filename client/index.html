@@ -62,7 +62,7 @@
         });
 
         function attemptLogin() {
-            const socket = io('http://localhost:12345');
+            var username = document.getElementById('username').value;
             socket.emit('login', {username: username});
         }
 
