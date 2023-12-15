@@ -16,35 +16,35 @@ void *handleClient(void *arg) {
     std::ifstream file("usersData/usersInfo.json");
     json data = json::parse(file);
 
-    while ((bytesRead = recv(clientSocket, buffer, sizeof(buffer), 0)))
-    {
-        buffer[bytesRead] = '\0';
+    // while ((bytesRead = recv(clientSocket, buffer, sizeof(buffer), 0)))
+    // {
+    //     buffer[bytesRead] = '\0';
 
-        //Parsing login data from client
-        json loginData = json::parse(buffer);
-        std::string username = loginData["username"];
-        bool successfullLogin = false;
+    //     //Parsing login data from client
+    //     json loginData = json::parse(buffer);
+    //     std::string username = loginData["username"];
+    //     bool successfullLogin = false;
 
-        for (const auto &user : data["usersInfo"]) {
-            if (user["username"] == username) {
-                successfullLogin = true;
-                break;
-            }
-        }
+    //     for (const auto &user : data["usersInfo"]) {
+    //         if (user["username"] == username) {
+    //             successfullLogin = true;
+    //             break;
+    //         }
+    //     }
 
-        std::string loginResponse;
-        if (successfullLogin)
-        {
-            loginResponse = "login sucess";
-            send(clientSocket, loginResponse.c_str(), loginResponse.size(), 0);
-            break;
-        }
-        else {
-            loginResponse = "login failure";
-            send(clientSocket, loginResponse.c_str(), loginResponse.size(), 0);
-        }
+    //     std::string loginResponse;
+    //     if (successfullLogin)
+    //     {
+    //         loginResponse = "login success";
+    //         send(clientSocket, loginResponse.c_str(), loginResponse.size(), 0);
+    //         break;
+    //     }
+    //     else {
+    //         loginResponse = "login failure";
+    //         send(clientSocket, loginResponse.c_str(), loginResponse.size(), 0);
+    //     }
         
-    }
+    // }
     
 
     while ((bytesRead = recv(clientSocket, buffer, sizeof(buffer), 0)) > 0) {
@@ -112,3 +112,17 @@ int main() {
     close(serverSocket);
     return 0;
 }
+
+/*
+Otrzymana wiadomość od klienta: GET /socket.io/?EIO=4&transport=polling&t=Onkj8T9 HTTP/1.1
+Host: localhost:12345
+User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/109.0
+Accept: *//*
+Accept-Language: pl,en-US;q=0.7,en;q=0.3
+Accept-Encoding: gzip, deflate, br
+Origin: null
+Connection: keep-alive
+Sec-Fetch-Dest: empty
+Sec-Fetch-Mode: cors
+Sec-Fetch-Site: cross-site
+*/
