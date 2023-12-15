@@ -1,0 +1,25 @@
+{
+    "usersInfo": [
+        {
+            "id": 1,
+            "username": "test",
+            "friends": ["niko", "miki"]
+        },
+        {
+            "id": 2,
+            "username": "niko",
+            "friends": ["test"]
+        },
+        {
+            "id": 3,
+            "username": "miki",
+            "friends": ["test"]
+        },
+        {
+            "id": 4,
+            "username": "kubaK",
+            "friends": []
+        }
+        
+    ]
+}
