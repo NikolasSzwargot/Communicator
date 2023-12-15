@@ -2,13 +2,19 @@
 #include <cstring>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <nlohmann/json.hpp>
+#include <fstream>
+using json = nlohmann::json;
 
 void *handleClient(void *arg) {
     int clientSocket = *((int *)arg);
     char buffer[1024];
     ssize_t bytesRead;
+    std::ifstream file("usersData/usersInfo.json");
+    json data = json::parse(file);
 
     while ((bytesRead = recv(clientSocket, buffer, sizeof(buffer), 0)) > 0) {
         buffer[bytesRead] = '\0';
@@ -35,7 +41,13 @@ int main() {
     sockaddr_in serverAddress;
     serverAddress.sin_family = AF_INET;
     serverAddress.sin_port = htons(12345);
-    serverAddress.sin_addr.s_addr = INADDR_ANY;
+
+    if (inet_pton(AF_INET, "127.0.0.1", &serverAddress.sin_addr) <= 0) {
+        std::cerr << "Nieprawidlowy adres IP!" << std::endl;
+        close(serverSocket);
+        return -1;
+
+    }
 
     if (bind(serverSocket, (struct sockaddr*)&serverAddress, sizeof(serverAddress)) == -1) {
         std::cerr << "Błąd podczas przypisywania adresu do gniazda." << std::endl;

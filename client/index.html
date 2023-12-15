@@ -16,7 +16,7 @@
             <label for="username">Username:</label>
             <input type="text" id="username" name="username" required>
 
-            <button type="button" onclick="login()">Log In</button>
+            <button type="button" onclick="attemptLogin()">Log In</button>
         </form>
     </section>
 
@@ -40,7 +40,7 @@
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             // Change the host and port to match your server configuration
-            const socket = io('http://localhost:5000');
+            const socket = io('http://localhost:12345');
 
             function showReceivedMessage(msg) {
                 const chatMessages = document.getElementById('chatMessages');
@@ -53,7 +53,18 @@
             socket.on('chat message', (msg) => {
                 showReceivedMessage(msg);
             });
+
+            socket.on('login success', login);
+
+            socket.on('login failure', () =>{
+                alert('User does not exists!');
+            })
         });
+
+        function attemptLogin() {
+            const socket = io('http://localhost:12345');
+            socket.emit('login', {username: username});
+        }
 
         function login() {
             var username = document.getElementById('username').value;
