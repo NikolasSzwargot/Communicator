@@ -9,6 +9,10 @@
 #include <fstream>
 using json = nlohmann::json;
 
+//TODO: Implement better sending response function. This one SUCKS!
+// const std::string JSONTYPE = "application/json";
+// const std::string PLAINTYPE = "text/plain";
+
 void handleOptions(int clientSocket) {
     const char *response = "HTTP/1.1 200 OK\n"
                            "Access-Control-Allow-Origin: *\n"
@@ -26,6 +30,16 @@ void sendResponse(int clientSocket, const std::string& response) {
                              "Content-Type: text/plain\n\n";
 
     std::string fullResponse = corsHeader + response;
+    send(clientSocket, fullResponse.c_str(), fullResponse.size(), 0);
+}
+
+void sendFriendsList(int clientSocket, const std::string& friendsList) {
+    std::string corsHeader = "HTTP/1.1 200 OK\n"
+                             "Access-Control-Allow-Origin: *\n"
+                             "Content-Length: " + std::to_string(friendsList.size()) + "\n"
+                             "Content-Type: application/json\n\n";
+
+    std::string fullResponse = corsHeader + friendsList;
     send(clientSocket, fullResponse.c_str(), fullResponse.size(), 0);
 }
 
@@ -90,6 +104,9 @@ void *handleClient(void *arg) {
             std::cout << "Znajomi:\n" << userFriends << std::endl; 
             sendResponse(clientSocket, loginResponse);
             loggedIn = true;
+        } else if (loggedIn && strncmp(buffer, "GET /friends", 12) == 0) {
+            std::cout << "Wysylanie listy znajomych\n";
+            sendFriendsList(clientSocket, userFriends);
         } else if (loggedIn) {
             std::cout << "Message from loggedIn user: " << buffer << std::endl;
             // Obsługa komunikacji zalogowanego użytkownika
