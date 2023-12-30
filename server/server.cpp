@@ -9,47 +9,95 @@
 #include <fstream>
 using json = nlohmann::json;
 
+void handleOptions(int clientSocket) {
+    const char *response = "HTTP/1.1 200 OK\n"
+                           "Access-Control-Allow-Origin: *\n"
+                           "Access-Control-Allow-Methods: POST, GET, OPTIONS\n"
+                           "Access-Control-Allow-Headers: Content-Type\n"
+                           "Content-Length: 0\n\n";
+
+    send(clientSocket, response, strlen(response), 0);
+}
+
+void sendResponse(int clientSocket, const std::string& response) {
+    std::string corsHeader = "HTTP/1.1 200 OK\n"
+                             "Access-Control-Allow-Origin: *\n"
+                             "Content-Length: " + std::to_string(response.size()) + "\n"
+                             "Content-Type: text/plain\n\n";
+
+    std::string fullResponse = corsHeader + response;
+    send(clientSocket, fullResponse.c_str(), fullResponse.size(), 0);
+}
+
+json parseData(char buffer[1024]){
+    std::string str(buffer);
+    std::size_t found = str.find("{");
+
+    if (found != std::string::npos) {
+        std::string jsonData = str.substr(found);
+
+        try {
+            json receivedData = json::parse(jsonData);
+            return receivedData;
+
+        } catch (const std::exception& e) {
+            std::cerr << "Error parsing JSON: " << e.what() << std::endl;
+        }
+    }
+
+    return nullptr;
+    
+}
+
+bool handleLogin(json loginData, json serverUsers, std::string &friendsList) {
+    std::string username = loginData["username"];
+    bool successfullLogin = false;
+
+    for (const auto &user : serverUsers["usersInfo"]) {
+        if (user["username"] == username) {
+            successfullLogin = true;
+            friendsList = user["friends"].dump();
+            break;
+        }       
+    }
+
+    return successfullLogin;
+    
+}
+
 void *handleClient(void *arg) {
     int clientSocket = *((int *)arg);
     char buffer[1024];
     ssize_t bytesRead;
     std::ifstream file("usersData/usersInfo.json");
     json data = json::parse(file);
+    std::string userFriends;
+    std::cout << "Klient polaczony i gotowy do pracy!\n";
 
-    // while ((bytesRead = recv(clientSocket, buffer, sizeof(buffer), 0)))
-    // {
-    //     buffer[bytesRead] = '\0';
-
-    //     //Parsing login data from client
-    //     json loginData = json::parse(buffer);
-    //     std::string username = loginData["username"];
-    //     bool successfullLogin = false;
-
-    //     for (const auto &user : data["usersInfo"]) {
-    //         if (user["username"] == username) {
-    //             successfullLogin = true;
-    //             break;
-    //         }
-    //     }
-
-    //     std::string loginResponse;
-    //     if (successfullLogin)
-    //     {
-    //         loginResponse = "login success";
-    //         send(clientSocket, loginResponse.c_str(), loginResponse.size(), 0);
-    //         break;
-    //     }
-    //     else {
-    //         loginResponse = "login failure";
-    //         send(clientSocket, loginResponse.c_str(), loginResponse.size(), 0);
-    //     }
-        
-    // }
-    
+    bool loggedIn = false;
 
     while ((bytesRead = recv(clientSocket, buffer, sizeof(buffer), 0)) > 0) {
         buffer[bytesRead] = '\0';
-        std::cout << "Otrzymana wiadomość od klienta: " << buffer << std::endl;
+        json loginData = parseData(buffer);
+        std::string loginResponse;
+
+        if (strncmp(buffer, "OPTIONS", 7) == 0) {
+            handleOptions(clientSocket);
+            std::cout << "Opcje klienta ustawione.\n";
+        } else if (!loggedIn && handleLogin(loginData, data, userFriends)) {
+            loginResponse = "login success";
+            std::cout << "Proba logowania udana!\n";
+            std::cout << "Znajomi:\n" << userFriends << std::endl; 
+            sendResponse(clientSocket, loginResponse);
+            loggedIn = true;
+        } else if (loggedIn) {
+            std::cout << "Message from loggedIn user: " << buffer << std::endl;
+            // Obsługa komunikacji zalogowanego użytkownika
+        } else {
+            loginResponse = "login failure";
+            std::cout << "Proba logowania odrzucona!\n";
+            sendResponse(clientSocket, loginResponse);
+        }
     }
 
     if (bytesRead == 0) {
@@ -112,17 +160,3 @@ int main() {
     close(serverSocket);
     return 0;
 }
-
-/*
-Otrzymana wiadomość od klienta: GET /socket.io/?EIO=4&transport=polling&t=Onkj8T9 HTTP/1.1
-Host: localhost:12345
-User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/109.0
-Accept: *//*
-Accept-Language: pl,en-US;q=0.7,en;q=0.3
-Accept-Encoding: gzip, deflate, br
-Origin: null
-Connection: keep-alive
-Sec-Fetch-Dest: empty
-Sec-Fetch-Mode: cors
-Sec-Fetch-Site: cross-site
-*/

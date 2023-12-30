@@ -40,7 +40,6 @@
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             // Change the host and port to match your server configuration
-            const socket = io('http://localhost:12345');
 
             function showReceivedMessage(msg) {
                 const chatMessages = document.getElementById('chatMessages');
@@ -49,25 +48,34 @@
                 messageBubble.classList.add('message', 'other-message');
                 chatMessages.appendChild(messageBubble);
             }
-
-            socket.on('chat message', (msg) => {
-                showReceivedMessage(msg);
-            });
-
-            socket.on('login success', login);
-
-            socket.on('login failure', () =>{
-                alert('User does not exists!');
-            })
         });
 
         function attemptLogin() {
-            var username = document.getElementById('username').value;
-            socket.emit('login', {username: username});
+            const username = document.getElementById('username').value;
+            const sendData = { username: username};
+
+            fetch('http://localhost:12345', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(sendData),
+            })
+            .then(response => response.text()) // Konwersja odpowiedzi do tekstu
+            .then(data => {
+                if (data === 'login success') {
+                    login();
+                } else {
+                    alert('Login Failed!');
+                }
+            })
+            .catch(error => {
+                console.error('Error: ', error);
+            })
         }
 
         function login() {
-            var username = document.getElementById('username').value;
+            const username = document.getElementById('username').value;
             alert('Logged in successfully as ' + username);
 
             document.getElementById('loginSection').style.display = 'none';
@@ -103,8 +111,6 @@
                 chatMessages.appendChild(messageBubble);
 
                 // Send the message to the server
-                const socket = io('http://localhost:5000');
-                socket.emit('chat message', messageText);
 
                 // Clear the input field
                 messageInput.value = '';
