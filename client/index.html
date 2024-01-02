@@ -1,144 +1,193 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Simple Messenger</title>
-    <link rel="stylesheet" href="styles.css">
-</head>
-<body>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
     <header>
-        <h1>Simple Messenger</h1>
+      <h1>Simple Messenger</h1>
     </header>
 
     <section id="loginSection">
-        <form id="loginForm">
-            <label for="username">Username:</label>
-            <input type="text" id="username" name="username" required>
+      <form id="loginForm">
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username" required />
 
-            <button type="button" onclick="attemptLogin()">Log In</button>
-        </form>
+        <button type="button" onclick="attemptLogin()">Log In</button>
+      </form>
     </section>
 
-    <section id="messengerSection" style="display: none;">
-        <h2>Friends List</h2>
-        <ul id="friendsList">
-            <!-- List of friends will be dynamically populated here -->
-        </ul>
+    <section id="messengerSection" style="display: none">
+      <h2>Friends List</h2>
+      <ul id="friendsList">
+        <!-- List of friends will be dynamically populated here -->
+      </ul>
     </section>
 
-    <section id="chatSection" style="display: none;">
-        <h2 id="chatTitle">Chat with </h2>
-        <div id="chatMessages"></div>
-        <form id="sendMessageForm">
-            <textarea id="messageInput" placeholder="Type your message..."></textarea>
-            <button type="button" onclick="sendMessage()">Send</button>
-        </form>
+    <section id="chatSection" style="display: none">
+      <h2 id="chatTitle">Chat with</h2>
+      <div id="chatMessages"></div>
+      <form id="sendMessageForm">
+        <textarea
+          id="messageInput"
+          placeholder="Type your message..."
+        ></textarea>
+        <button type="button" id="messageButton">Send</button>
+      </form>
     </section>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            // Change the host and port to match your server configuration
+      document.addEventListener("DOMContentLoaded", function () {
+        // Change the host and port to match your server configuration
 
-            function showReceivedMessage(msg) {
-                const chatMessages = document.getElementById('chatMessages');
-                const messageBubble = document.createElement('div');
-                messageBubble.textContent = msg;
-                messageBubble.classList.add('message', 'other-message');
-                chatMessages.appendChild(messageBubble);
-            }
-        });
-
-        function attemptLogin() {
-            const username = document.getElementById('username').value;
-            const sendData = { username: username};
-
-            fetch('http://localhost:12345', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(sendData),
-            })
-            .then(response => response.text()) // Konwersja odpowiedzi do tekstu
-            .then(data => {
-                if (data === 'login success') {
-                    login();
-                } else {
-                    alert('Login Failed!');
-                }
-            })
-            .catch(error => {
-                console.error('Error: ', error);
-            })
+        function showReceivedMessage(msg) {
+          const chatMessages = document.getElementById("chatMessages");
+          const messageBubble = document.createElement("div");
+          messageBubble.textContent = msg;
+          messageBubble.classList.add("message", "other-message");
+          chatMessages.appendChild(messageBubble);
         }
+      });
 
-        function login() {
-            const username = document.getElementById('username').value;
-            alert('Logged in successfully as ' + username);
+      function attemptLogin() {
+        const username = document.getElementById("username").value;
+        const sendData = { username: username };
 
-            document.getElementById('loginSection').style.display = 'none';
-            document.getElementById('messengerSection').style.display = 'block';
+        fetch("http://localhost:12345", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(sendData),
+        })
+          .then((response) => response.text()) // Konwersja odpowiedzi do tekstu
+          .then((data) => {
+            if (data === "login success") {
+              login();
+            } else {
+              alert("Login Failed!");
+            }
+          })
+          .catch((error) => {
+            console.error("Error: ", error);
+          });
+      }
 
-            // Fetch the user's friends list after successful login
-            fetch('http://localhost:12345/friends', {
-                method: 'GET', // Use GET to retrieve the user's friends list
+      function login() {
+        const username = document.getElementById("username").value;
+        alert("Logged in successfully as " + username);
+
+        document.getElementById("loginSection").style.display = "none";
+        document.getElementById("messengerSection").style.display = "block";
+
+        // Fetch the user's friends list after successful login
+        fetch("http://localhost:12345/friends", {
+          method: "GET", // Use GET to retrieve the user's friends list
+        })
+          .then((response) => response.json())
+          .then((friendsList) => {
+            // Populate the friends list on the UI
+            const friendsListUI = document.getElementById("friendsList");
+            friendsListUI.innerHTML = ""; // Clear the list first
+
+            friendsList.forEach((friend) => {
+              const friendElement = document.createElement("li");
+              friendElement.textContent = friend;
+              friendElement.addEventListener("click", function () {
+                showChat(this.textContent, username);
+              });
+              friendsListUI.appendChild(friendElement);
+            });
+          })
+          .catch((error) => {
+            console.error("Error fetching friends list: ", error);
+          });
+      }
+
+      function getChatHistory(sender, recipient) {
+        fetch(
+          `http://localhost:12345/chat-history?sender=${sender}&recipient=${recipient}`,
+          {
+            method: "GET",
+          }
+        )
+          .then((response) => response.json())
+          .then((chatHistory) => {
+            // Obsługa odpowiedzi z historią czatu
+            const chatMessages = document.getElementById("chatMessages");
+            chatMessages.innerHTML = ""; // Wyczyść listę wiadomości czatu
+
+            chatHistory.forEach((message) => {
+              const messageBubble = document.createElement("div");
+              messageBubble.textContent =
+                `${message.sender}` + ": " + `${message.message}`;
+
+              if (message.sender === sender) {
+                messageBubble.classList.add("message", "my-message");
+              } else {
+                messageBubble.classList.add("message", "other-message");
+              }
+              chatMessages.appendChild(messageBubble);
+            });
+          })
+          .catch((error) => {
+            console.error("Error fetching chat history: ", error);
+          });
+      }
+
+      function showChat(friendName, currentUser) {
+        getChatHistory(currentUser, friendName);
+        document.getElementById("messengerSection").style.display = "none";
+        document.getElementById("chatSection").style.display = "block";
+        document.getElementById("chatTitle").textContent =
+          "Chat with " + friendName;
+
+        document.getElementById("messageButton").onclick = function () {
+          sendMessage(currentUser, friendName);
+        };
+      }
+
+      function sendMessage(sender, recipient) {
+        var messageInput = document.getElementById("messageInput");
+        var messageText = messageInput.value;
+
+        const messageData = {
+          sender: sender,
+          recipient: recipient,
+          message: messageText,
+        };
+
+        if (messageText.trim() !== "") {
+          fetch("http://localhost:12345/send-message", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(messageData),
+          })
+            .then((response) => {
+              console.log(response);
             })
-            .then(response => response.json())
-            .then(friendsList => {
-                // Populate the friends list on the UI
-                const friendsListUI = document.getElementById('friendsList');
-                friendsListUI.innerHTML = ''; // Clear the list first
-
-                friendsList.forEach(friend => {
-                    const friendElement = document.createElement('li');
-                    friendElement.textContent = friend;
-                    friendElement.addEventListener('click', function () {
-                        showChat(this.textContent);
-                    });
-                    friendsListUI.appendChild(friendElement);
-                });
-            })
-            .catch(error => {
-                console.error('Error fetching friends list: ', error);
+            .catch((error) => {
+              console.error("Error sending message: ", error);
             });
 
-            // // Generate a list of 5 sample friends
-            // var friendsList = document.getElementById('friendsList');
-            // for (var i = 1; i <= 5; i++) {
-            //     var friend = document.createElement('li');
-            //     friend.textContent = 'Friend ' + i;
-            //     friend.addEventListener('click', function () {
-            //         showChat(this.textContent);
-            //     });
-            //     friendsList.appendChild(friend);
-            // }
+          const chatMessages = document.getElementById("chatMessages");
+          const messageBubble = document.createElement("div");
+          messageBubble.textContent = sender + ": " + messageText;
+          messageBubble.classList.add("message", "my-message");
+          chatMessages.appendChild(messageBubble);
+
+          // Send the message to the server
+
+          // Clear the input field
+          messageInput.value = "";
         }
-
-        function showChat(friendName) {
-            document.getElementById('messengerSection').style.display = 'none';
-            document.getElementById('chatSection').style.display = 'block';
-            document.getElementById('chatTitle').textContent = 'Chat with ' + friendName;
-        }
-
-        function sendMessage() {
-            var messageInput = document.getElementById('messageInput');
-            var messageText = messageInput.value;
-
-            if (messageText.trim() !== '') {
-                const chatMessages = document.getElementById('chatMessages');
-                const messageBubble = document.createElement('div');
-                messageBubble.textContent = messageText;
-                messageBubble.classList.add('message', 'my-message');
-                chatMessages.appendChild(messageBubble);
-
-                // Send the message to the server
-
-                // Clear the input field
-                messageInput.value = '';
-            }
-        }
+      }
     </script>
-</body>
+  </body>
 </html>

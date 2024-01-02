@@ -1,0 +1,49 @@
+{
+    "userMessages": [
+        {
+            "message": "qrger",
+            "recipient": "niko",
+            "sender": "test"
+        },
+        {
+            "message": "aSWFSD",
+            "recipient": "niko",
+            "sender": "test"
+        },
+        {
+            "message": "safsdgf asfdsad",
+            "recipient": "niko",
+            "sender": "test"
+        },
+        {
+            "message": "asfsdfsd",
+            "recipient": "niko",
+            "sender": "test"
+        },
+        {
+            "message": "ergrge",
+            "recipient": "niko",
+            "sender": "test"
+        },
+        {
+            "message": "dance shade",
+            "recipient": "test",
+            "sender": "niko"
+        },
+        {
+            "message": "dance\n",
+            "recipient": "niko",
+            "sender": "test"
+        },
+        {
+            "message": "nowa",
+            "recipient": "niko",
+            "sender": "test"
+        },
+        {
+            "message": "ok tescie",
+            "recipient": "test",
+            "sender": "niko"
+        }
+    ]
+}
