@@ -105,11 +105,12 @@ void extractParams(const std::string& url, std::string& sender, std::string& rec
 bool handleLogin(json loginData, json serverUsers, std::string &friendsList)
 {
     std::string username = loginData["username"];
+    std::string password = loginData["password"];
     bool successfullLogin = false;
 
     for (const auto &user : serverUsers["usersInfo"])
     {
-        if (user["username"] == username)
+        if (user["username"] == username && user["password"] == password)
         {
             successfullLogin = true;
             friendsList = user["friends"].dump();
@@ -232,7 +233,6 @@ void *handleClient(void *arg)
         {
             std::string sender, receipent;
             extractParams(buffer, sender, receipent);
-            std::cout << sender << " " << receipent << std::endl;
             sendChatHistory(clientSocket, sender, receipent, USERMESSAGES);
         }
         else if (loggedIn)
