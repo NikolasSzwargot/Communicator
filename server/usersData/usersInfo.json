@@ -3,21 +3,25 @@
         {
             "id": 1,
             "username": "test",
+            "password": "testpassword",
             "friends": ["niko", "miki"]
         },
         {
             "id": 2,
             "username": "niko",
+            "password": "nikopassword",
             "friends": ["test"]
         },
         {
             "id": 3,
             "username": "miki",
+            "password": "mikipassword",
             "friends": ["test"]
         },
         {
             "id": 4,
             "username": "kubaK",
+            "password": "kubaKpassword",
             "friends": []
         }
         
