@@ -1,29 +1,59 @@
 {
     "usersInfo": [
         {
+            "friends": [
+                "niko",
+                "miki"
+            ],
             "id": 1,
-            "username": "test",
             "password": "testpassword",
-            "friends": ["niko", "miki"]
+            "username": "test"
         },
         {
+            "friends": [
+                "test"
+            ],
             "id": 2,
-            "username": "niko",
             "password": "nikopassword",
-            "friends": ["test"]
+            "username": "niko"
         },
         {
+            "friends": [
+                "test"
+            ],
             "id": 3,
-            "username": "miki",
             "password": "mikipassword",
-            "friends": ["test"]
+            "username": "miki"
         },
         {
+            "friends": [],
             "id": 4,
-            "username": "kubaK",
             "password": "kubaKpassword",
-            "friends": []
+            "username": "kubaK"
+        },
+        {
+            "friends": [],
+            "id": 5,
+            "password": "test",
+            "username": "brandnew"
+        },
+        {
+            "friends": [],
+            "id": 6,
+            "password": "test",
+            "username": "brandnew2"
+        },
+        {
+            "friends": [],
+            "id": 7,
+            "password": "abc",
+            "username": "brandnew3"
+        },
+        {
+            "friends": [],
+            "id": 8,
+            "password": "john",
+            "username": "johnWick"
         }
-        
     ]
 }

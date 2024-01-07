@@ -15,6 +15,7 @@ using json = nlohmann::json;
 //  const std::string PLAINTYPE = "text/plain";
 
 const std::string USERMESSAGES = "usersData/messages.json";
+const std::string USERSINFO = "usersData/usersInfo.json";
 json userMessages;
 
 void handleOptions(int clientSocket)
@@ -102,23 +103,92 @@ void extractParams(const std::string& url, std::string& sender, std::string& rec
     }
 }
 
-bool handleLogin(json loginData, json serverUsers, std::string &friendsList)
+json createUsersJson(std::string filename) {
+    std::ifstream inputFile(filename);
+    json usersData;
+    if (inputFile.is_open())
+    {
+        inputFile >> usersData;
+        inputFile.close();
+        return usersData;
+    }
+    else
+    {
+        return nullptr;
+    }
+}
+
+bool handleLogin(std::string filename, json loginData, std::string &friendsList)
 {
-    std::string username = loginData["username"];
-    std::string password = loginData["password"];
-    bool successfullLogin = false;
+    json serverUsers = createUsersJson(filename);
+
+    if (loginData != nullptr)
+    {
+    
+        std::string username = loginData["username"];
+        std::string password = loginData["password"];
+        bool successfullLogin = false;
+
+        for (const auto &user : serverUsers["usersInfo"])
+        {
+            if (user["username"] == username && user["password"] == password)
+            {
+                successfullLogin = true;
+                friendsList = user["friends"].dump();
+                break;
+            }
+        }
+
+        return successfullLogin;
+    }
+    else {
+        return false;
+    }
+}
+
+bool registerUser(std::string username, std::string password, std::string filename) {
+    json usersData = createUsersJson(filename);
+
+    int id = usersData["usersInfo"].size() + 1;
+
+    json newUser = {
+        {"id", id},
+        {"username", username},
+        {"password", password},
+        {"friends", json::array()}
+    };
+
+    usersData["usersInfo"].push_back(newUser);
+
+    std::ofstream outputFile(filename, std::ios::out);
+    if (outputFile.is_open())
+    {
+        outputFile << usersData.dump(4) << std::endl;
+        outputFile.close();
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+bool handleRegister(json registerData, std::string filename)
+{
+    json serverUsers = createUsersJson(filename);
+    std::string username = registerData["username"];
+    std::string password = registerData["password"];
+    bool successfullRegister = true;
 
     for (const auto &user : serverUsers["usersInfo"])
     {
-        if (user["username"] == username && user["password"] == password)
+        if (user["username"] == username)
         {
-            successfullLogin = true;
-            friendsList = user["friends"].dump();
-            break;
+            return false;
         }
     }
 
-    return successfullLogin;
+    return registerUser(username, password, USERSINFO);
 }
 
 void addMessageToJson(char buffer[1024], const std::string filename)
@@ -210,7 +280,7 @@ void *handleClient(void *arg)
             handleOptions(clientSocket);
             std::cout << "Opcje klienta ustawione.\n";
         }
-        else if (!loggedIn && handleLogin(loginData, data, userFriends))
+        else if (!loggedIn && handleLogin(USERSINFO, loginData, userFriends))
         {
             loginResponse = "login success";
             std::cout << "Proba logowania udana!\n";
@@ -218,6 +288,21 @@ void *handleClient(void *arg)
                       << userFriends << std::endl;
             sendResponse(clientSocket, loginResponse);
             loggedIn = true;
+        }
+        else if (!loggedIn && strncmp(buffer, "POST /register", 14) == 0)
+        {
+            if (handleRegister(loginData, USERSINFO))
+            {
+                std::cout << "Zarejestrowano nowego uzytkownika!\n";
+                loginResponse = "register success";
+            }
+            else {
+                std::cout << "Nieudana rejestracja!\n";
+                loginResponse = "register failure";
+            }
+
+            sendResponse(clientSocket, loginResponse);
+            
         }
         else if (loggedIn && strncmp(buffer, "GET /friends", 12) == 0)
         {
@@ -240,7 +325,7 @@ void *handleClient(void *arg)
             std::cout << "Message from loggedIn user: " << buffer << std::endl;
             // Obsługa komunikacji zalogowanego użytkownika
         }
-        else
+        else if (!handleLogin(USERSINFO, loginData, userFriends))
         {
             loginResponse = "login failure";
             std::cout << "Proba logowania odrzucona!\n";

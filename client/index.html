@@ -19,6 +19,7 @@
         <input type="password" id="password" name="password" required />
 
         <button type="button" onclick="attemptLogin()">Log In</button>
+        <button type="button" onclick="attemptRegister()">Register</button>
       </form>
     </section>
 
@@ -74,6 +75,31 @@
               login();
             } else {
               alert("Login Failed!");
+            }
+          })
+          .catch((error) => {
+            console.error("Error: ", error);
+          });
+      }
+
+      function attemptRegister() {
+        const username = document.getElementById("username").value;
+        const password = document.getElementById("password").value;
+        const sendData = { username: username, password: password };
+
+        fetch("http://localhost:12345/register", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(sendData),
+        })
+          .then((response) => response.text()) // Konwersja odpowiedzi do tekstu
+          .then((data) => {
+            if (data === "register success") {
+              alert("Successfully registered! Please log in!")
+            } else {
+              alert("Register Failed!");
             }
           })
           .catch((error) => {

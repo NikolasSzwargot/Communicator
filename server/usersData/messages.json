@@ -44,6 +44,51 @@
             "message": "ok tescie",
             "recipient": "test",
             "sender": "niko"
+        },
+        {
+            "message": "asfsdg",
+            "recipient": "niko",
+            "sender": "test"
+        },
+        {
+            "message": "nowa wiadomosc na odswiezenie.",
+            "recipient": "niko",
+            "sender": "test"
+        },
+        {
+            "message": "ok dzieki",
+            "recipient": "test",
+            "sender": "niko"
+        },
+        {
+            "message": "jak tam wg?\n",
+            "recipient": "niko",
+            "sender": "test"
+        },
+        {
+            "message": "sdggsdfdsfgdrf",
+            "recipient": "niko",
+            "sender": "test"
+        },
+        {
+            "message": "marek ty orku",
+            "recipient": "test",
+            "sender": "niko"
+        },
+        {
+            "message": "sgv",
+            "recipient": "miki",
+            "sender": "test"
+        },
+        {
+            "message": "asdvf",
+            "recipient": "miki",
+            "sender": "test"
+        },
+        {
+            "message": "ej",
+            "recipient": "test",
+            "sender": "miki"
         }
     ]
 }
