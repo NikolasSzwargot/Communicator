@@ -53,6 +53,8 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <script>
+      let port = 22222;
+
       document.addEventListener("DOMContentLoaded", function () {
         // Change the host and port to match your server configuration
 
@@ -87,7 +89,7 @@
       }
 
       function fetchUsers() {
-    fetch("http://localhost:12345/users", {
+    fetch("http://localhost:"+port+"/users", {
       method: "GET"
       })
       .then((response) => response.json())
@@ -136,7 +138,8 @@
   function addFriend(username) {
       // Send an appropriate request to the server to add the friend
       // Use fetch or another AJAX request to send the data to the server
-      fetch("http://localhost:12345/add-friend", {
+      alert(username)
+      fetch("http://localhost:"+port+"/add-friend", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -145,6 +148,7 @@
       })
       .then((response) => response.text())
       .then((data) => {
+        console.log(data)
         if (data === "friend added") {
           alert("Friend added successfully!");
           // You may update the friends list here or refresh it
@@ -163,7 +167,7 @@
         const password = document.getElementById("password").value;
         const sendData = { username: username, password: password };
 
-        fetch("http://localhost:12345", {
+        fetch("http://localhost:"+port+"", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -172,6 +176,7 @@
         })
           .then((response) => response.text()) // Konwersja odpowiedzi do tekstu
           .then((data) => {
+            console.log(data)
             if (data === "login success") {
               login();
             } else {
@@ -188,7 +193,7 @@
         const password = document.getElementById("password").value;
         const sendData = { username: username, password: password };
 
-        fetch("http://localhost:12345/register", {
+        fetch("http://localhost:"+port+"/register", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -216,7 +221,7 @@
         document.getElementById("messengerSection").style.display = "block";
 
         // Fetch the user's friends list after successful login
-        fetch("http://localhost:12345/friends", {
+        fetch("http://localhost:"+port+"/friends", {
           method: "GET", // Use GET to retrieve the user's friends list
         })
           .then((response) => response.json())
@@ -241,7 +246,7 @@
 
       function getChatHistory(sender, recipient) {
         fetch(
-          `http://localhost:12345/chat-history?sender=${sender}&recipient=${recipient}`,
+          `http://localhost:${port}/chat-history?sender=${sender}&recipient=${recipient}`,
           {
             method: "GET",
           }
@@ -315,7 +320,7 @@
         };
 
         if (messageText.trim() !== "") {
-          fetch("http://localhost:12345/send-message", {
+          fetch("http://localhost:"+port+"/send-message", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",

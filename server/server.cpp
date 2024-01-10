@@ -10,6 +10,9 @@
 #include <sstream>
 using json = nlohmann::json;
 
+// int port = 11111;
+int port = 22222;
+
 const std::string USERMESSAGES = "usersData/messages.json";
 const std::string USERSINFO = "usersData/usersInfo.json";
 json userMessages;
@@ -272,6 +275,46 @@ void addMessageToJson(char buffer[1024], const std::string filename)
     }
 }
 
+void addFriendToUser(json& usersInfo, const std::string& username, const std::string& newFriend) {
+    auto userIt = std::find_if(usersInfo["usersInfo"].begin(), usersInfo["usersInfo"].end(), [&username](const auto& user) {
+        return user["username"] == username;
+    });
+
+    if (userIt != usersInfo["usersInfo"].end()) {
+        userIt->at("friends").push_back(newFriend);
+        std::cout << "Dodano przyjaciela '" << newFriend << "' do użytkownika '" << username << "'." << std::endl;
+    } else {
+        std::cerr << "Użytkownik o nazwie '" << username << "' nie został znaleziony." << std::endl;
+    }
+}
+
+void addFriend(char buffer[1024], std::string currentUsername)
+{
+    json message = parseData(buffer);
+
+    std::ifstream inputFile(USERSINFO);
+    json usersInfo;
+    if (inputFile.is_open())
+        inputFile >> usersInfo;
+    else
+        usersInfo["usersInfo"] = json::array();
+    inputFile.close();
+
+    std::string username = message["username"];
+
+    addFriendToUser(usersInfo, currentUsername, username);
+
+    std::ofstream outputFile(USERSINFO, std::ios::out);
+    if (outputFile.is_open())
+    {
+        outputFile << std::setw(4) << usersInfo << std::endl;
+        outputFile.close();
+        std::cout << "Zaktualizowano listę znajomych!\n";
+    }
+    else
+        std::cout << "Nie mozna otworzyc pliku!\n";
+}
+
 void sendChatHistory(int clientSocket, const std::string &sender, const std::string &recipient, const std::string &filename)
 {
     std::ifstream inputFile(filename);
@@ -365,6 +408,14 @@ void *handleClient(void *arg)
             handleOptions(clientSocket);
             addMessageToJson(buffer, USERMESSAGES);
         }
+        else if (loggedIn && strncmp(buffer, "POST /add-friend", 16) == 0)
+        {
+            handleOptions(clientSocket);
+            std::cout<<currentUsername<<std::endl;
+            addFriend(buffer, currentUsername);
+            std::string friendAdded = "friend added";
+            sendResponse(clientSocket, friendAdded);
+        }
         else if (loggedIn && strncmp(buffer, "GET /chat-history", 17) == 0)
         { //GET /users
             std::string sender, receipent;
@@ -417,7 +468,7 @@ int main()
 
     sockaddr_in serverAddress;
     serverAddress.sin_family = AF_INET;
-    serverAddress.sin_port = htons(12345);
+    serverAddress.sin_port = htons(port);
 
     if (inet_pton(AF_INET, "127.0.0.1", &serverAddress.sin_addr) <= 0)
     {
@@ -440,7 +491,7 @@ int main()
         return -1;
     }
 
-    std::cout << "Serwer nasłuchuje na porcie 12345..." << std::endl;
+    std::cout << "Serwer nasłuchuje na porcie " << port << "..." << std::endl;
 
     while (true)
     {
