@@ -11,7 +11,7 @@
 using json = nlohmann::json;
 
 // int port = 11111;
-int port = 22222;
+int port = 444444;
 
 const std::string USERMESSAGES = "usersData/messages.json";
 const std::string USERSINFO = "usersData/usersInfo.json";
@@ -411,7 +411,6 @@ void *handleClient(void *arg)
         else if (loggedIn && strncmp(buffer, "POST /add-friend", 16) == 0)
         {
             handleOptions(clientSocket);
-            std::cout<<currentUsername<<std::endl;
             addFriend(buffer, currentUsername);
             std::string friendAdded = "friend added";
             sendResponse(clientSocket, friendAdded);
