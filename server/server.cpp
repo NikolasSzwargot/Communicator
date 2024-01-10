@@ -10,10 +10,6 @@
 #include <sstream>
 using json = nlohmann::json;
 
-// TODO: Implement better sending response function. This one SUCKS!
-//  const std::string JSONTYPE = "application/json";
-//  const std::string PLAINTYPE = "text/plain";
-
 const std::string USERMESSAGES = "usersData/messages.json";
 const std::string USERSINFO = "usersData/usersInfo.json";
 json userMessages;
@@ -39,6 +35,19 @@ void sendResponse(int clientSocket, const std::string &response)
 
     std::string fullResponse = corsHeader + response;
     send(clientSocket, fullResponse.c_str(), fullResponse.size(), 0);
+}
+
+json getCurrentUser(json serverUsers, std::string username, std::string password) {
+
+    for (const auto &user : serverUsers["usersInfo"])
+    {
+        if (user["username"] == username && user["password"] == password)
+        {
+                return user;
+        }
+    }
+
+    return nullptr;
 }
 
 void sendFriendsList(int clientSocket, const std::string &friendsList)
@@ -116,6 +125,47 @@ json createUsersJson(std::string filename) {
     {
         return nullptr;
     }
+}
+
+void sendUsers(int clientSocket, const std::string &friendsList, std::string username, std::string password) {
+
+    json serverUsers = createUsersJson(USERSINFO);
+    json friends = json::parse(friendsList);
+    json usernames = json::array();
+
+    for (const auto &user : serverUsers["usersInfo"])
+    {
+        bool validUser = true;
+        if (user["username"] != username)
+        {
+            for (const auto &friendName : friends ){
+                if (friendName == user["username"])
+                {
+                    validUser = false;
+                    break;
+                }
+                
+            }
+            if (validUser)
+            {
+                usernames.push_back(user["username"]);
+            }
+            
+        }
+    }
+
+    json responseJson;
+    responseJson["users"] = usernames;
+    std::string responseBody = responseJson.dump();
+
+    std::string corsHeader = "HTTP/1.1 200 OK\n"
+                             "Access-Control-Allow-Origin: *\n"
+                             "Content-Length: " +
+                             std::to_string(responseBody.size()) + "\n"
+                                                                  "Content-Type: application/json\n\n";
+
+    std::string fullResponse = corsHeader + responseBody;
+    send(clientSocket, fullResponse.c_str(), fullResponse.size(), 0);
 }
 
 bool handleLogin(std::string filename, json loginData, std::string &friendsList)
@@ -266,6 +316,7 @@ void *handleClient(void *arg)
     json data = json::parse(file);
     std::string userFriends;
     std::cout << "Klient polaczony i gotowy do pracy!\n";
+    std::string currentUsername, currentPassword;
 
     bool loggedIn = false;
 
@@ -284,8 +335,8 @@ void *handleClient(void *arg)
         {
             loginResponse = "login success";
             std::cout << "Proba logowania udana!\n";
-            std::cout << "Znajomi:\n"
-                      << userFriends << std::endl;
+            currentUsername = loginData["username"];
+            currentPassword = loginData["password"];
             sendResponse(clientSocket, loginResponse);
             loggedIn = true;
         }
@@ -315,10 +366,15 @@ void *handleClient(void *arg)
             addMessageToJson(buffer, USERMESSAGES);
         }
         else if (loggedIn && strncmp(buffer, "GET /chat-history", 17) == 0)
-        {
+        { //GET /users
             std::string sender, receipent;
             extractParams(buffer, sender, receipent);
             sendChatHistory(clientSocket, sender, receipent, USERMESSAGES);
+        }
+        else if (loggedIn && strncmp(buffer, "GET /users", 10) == 0)
+        {
+            sendUsers(clientSocket, userFriends, 
+                        currentUsername, currentPassword);
         }
         else if (loggedIn)
         {
@@ -331,8 +387,10 @@ void *handleClient(void *arg)
             std::cout << "Proba logowania odrzucona!\n";
             sendResponse(clientSocket, loginResponse);
         }
+        else {
+            std::cout << "Message from user: " << buffer << std::endl;
+        }
     }
-    // GET /chat-history
 
     if (bytesRead == 0)
     {

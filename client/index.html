@@ -28,6 +28,14 @@
       <ul id="friendsList">
         <!-- List of friends will be dynamically populated here -->
       </ul>
+      <button id="addFriendButton">Add Friend</button>
+      <div id="userList" style="display: none">
+      <h3>User List</h3>
+      <ul id="users">
+        <!-- List of users will be dynamically populated here -->
+      </ul>
+      <button id="addSelectedFriendButton">Add Selected Friend</button>
+    </div>
     </section>
 
     <section id="chatSection" style="display: none">
@@ -56,6 +64,99 @@
           chatMessages.appendChild(messageBubble);
         }
       });
+
+      // Function to handle user selection
+      function handleUserSelection(username) {
+        // Implement logic to handle the selected user
+        // For example, you can highlight the selected user
+        const usersList = document.getElementById("users");
+        const userElements = usersList.getElementsByTagName("li");
+
+        for (let i = 0; i < userElements.length; i++) {
+          const userElement = userElements[i];
+          if (userElement.textContent === username) {
+            userElement.classList.add("selected"); // Add a CSS class to highlight the selected user
+          } else {
+            userElement.classList.remove("selected"); // Remove the class from other users
+          }
+        }
+
+        // You can perform additional actions here based on the selected user
+        console.log("Selected user:", username);
+        // Send the selected username for further processing or action
+      }
+
+      function fetchUsers() {
+    fetch("http://localhost:12345/users", {
+      method: "GET"
+      })
+      .then((response) => response.json())
+      .then((data) => {
+        const users = data.users;
+        const usersList = document.getElementById("users");
+        usersList.innerHTML = ""; // Clear the list first
+
+        users.forEach((user) => {
+          const userElement = document.createElement("li");
+          userElement.textContent = user;
+          userElement.addEventListener("click", function () {
+            handleUserSelection(user);
+          });
+          usersList.appendChild(userElement);
+        });
+      })
+      .catch((error) => {
+        console.error("Error fetching users: ", error);
+      });
+    }
+
+  document.getElementById("addFriendButton").onclick = function () {
+      const userList = document.getElementById("userList");
+      if (userList.style.display === "none") {
+        fetchUsers(); 
+        userList.style.display = "block";
+      } else {
+        userList.style.display = "none";
+      }
+    };
+
+    // Function to add selected friend
+  document.getElementById("addSelectedFriendButton").onclick = function () {
+      const selectedUser = document.querySelector("#users li.selected");
+      if (selectedUser) {
+        const friendUsername = selectedUser.textContent;
+        // Send a request to the server to add the friend
+        addFriend(friendUsername);
+      } else {
+        alert("Please select a user to add as a friend.");
+      }
+    };
+
+    // Function to send a request to the server to add a friend
+  function addFriend(username) {
+      // Send an appropriate request to the server to add the friend
+      // Use fetch or another AJAX request to send the data to the server
+      fetch("http://localhost:12345/add-friend", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ username: username }),
+      })
+      .then((response) => response.text())
+      .then((data) => {
+        if (data === "friend added") {
+          alert("Friend added successfully!");
+          // You may update the friends list here or refresh it
+          // Implement logic to refresh the friends list after adding a friend
+        } else {
+          alert("Failed to add friend!");
+        }
+      })
+      .catch((error) => {
+        console.error("Error adding friend: ", error);
+      });
+    }
 
       function attemptLogin() {
         const username = document.getElementById("username").value;
