@@ -11,7 +11,7 @@
 using json = nlohmann::json;
 
 // int port = 11111;
-int port = 444444;
+int port = 12345;
 
 const std::string USERMESSAGES = "usersData/messages.json";
 const std::string USERSINFO = "usersData/usersInfo.json";
@@ -197,6 +197,19 @@ bool handleLogin(std::string filename, json loginData, std::string &friendsList)
     else {
         return false;
     }
+}
+
+std::string updateUserFriends(std::string username) {
+    json serverUsers = createUsersJson(USERSINFO);
+
+    for (const auto &user : serverUsers["usersInfo"])
+        {
+            if (user["username"] == username)
+            {
+                return user["friends"].dump();
+            }
+        }
+    return nullptr;
 }
 
 bool registerUser(std::string username, std::string password, std::string filename) {
@@ -410,13 +423,17 @@ void *handleClient(void *arg)
         }
         else if (loggedIn && strncmp(buffer, "POST /add-friend", 16) == 0)
         {
-            handleOptions(clientSocket);
+            //handleOptions(clientSocket);
             addFriend(buffer, currentUsername);
             std::string friendAdded = "friend added";
+            userFriends = updateUserFriends(currentUsername);
+            std:: cout << userFriends << std::endl;
             sendResponse(clientSocket, friendAdded);
         }
         else if (loggedIn && strncmp(buffer, "GET /chat-history", 17) == 0)
         { //GET /users
+            std::cout << "Wysylanie historii czatu!\n";
+            std::cout << "Wiadomosc:\n" << buffer << std::endl;
             std::string sender, receipent;
             extractParams(buffer, sender, receipent);
             sendChatHistory(clientSocket, sender, receipent, USERMESSAGES);
