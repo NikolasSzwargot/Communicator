@@ -8,6 +8,10 @@
 #include <nlohmann/json.hpp>
 #include <fstream>
 #include <sstream>
+
+pthread_mutex_t usersFileMutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t messageFileMutex = PTHREAD_MUTEX_INITIALIZER;
+
 using json = nlohmann::json;
 
 // int port = 11111;
@@ -116,16 +120,19 @@ void extractParams(const std::string& url, std::string& sender, std::string& rec
 }
 
 json createUsersJson(std::string filename) {
+    pthread_mutex_lock(&usersFileMutex);
     std::ifstream inputFile(filename);
     json usersData;
     if (inputFile.is_open())
     {
         inputFile >> usersData;
         inputFile.close();
+        pthread_mutex_unlock(&usersFileMutex);
         return usersData;
     }
     else
     {
+        pthread_mutex_unlock(&usersFileMutex);
         return nullptr;
     }
 }
@@ -226,15 +233,18 @@ bool registerUser(std::string username, std::string password, std::string filena
 
     usersData["usersInfo"].push_back(newUser);
 
+    pthread_mutex_lock(&usersFileMutex);
     std::ofstream outputFile(filename, std::ios::out);
     if (outputFile.is_open())
     {
         outputFile << usersData.dump(4) << std::endl;
         outputFile.close();
+        pthread_mutex_unlock(&usersFileMutex);
         return true;
     }
     else
     {
+        pthread_mutex_unlock(&usersFileMutex);
         return false;
     }
 }
@@ -259,6 +269,7 @@ bool handleRegister(json registerData, std::string filename)
 
 void addMessageToJson(char buffer[1024], const std::string filename)
 {
+    pthread_mutex_lock(&messageFileMutex);
     json message = parseData(buffer);
 
     std::ifstream inputFile(filename);
@@ -286,6 +297,8 @@ void addMessageToJson(char buffer[1024], const std::string filename)
     {
         std::cout << "Nie mozna otworzyc pliku!\n";
     }
+
+    pthread_mutex_unlock(&messageFileMutex);
 }
 
 void addFriendToUser(json& usersInfo, const std::string& username, const std::string& newFriend) {
@@ -303,6 +316,7 @@ void addFriendToUser(json& usersInfo, const std::string& username, const std::st
 
 void addFriend(char buffer[1024], std::string currentUsername)
 {
+    pthread_mutex_lock(&usersFileMutex);
     json message = parseData(buffer);
 
     std::ifstream inputFile(USERSINFO);
@@ -326,10 +340,13 @@ void addFriend(char buffer[1024], std::string currentUsername)
     }
     else
         std::cout << "Nie mozna otworzyc pliku!\n";
+
+    pthread_mutex_unlock(&usersFileMutex);
 }
 
 void sendChatHistory(int clientSocket, const std::string &sender, const std::string &recipient, const std::string &filename)
 {
+    pthread_mutex_lock(&messageFileMutex);
     std::ifstream inputFile(filename);
     json userMessages;
     if (inputFile.is_open())
@@ -361,6 +378,7 @@ void sendChatHistory(int clientSocket, const std::string &sender, const std::str
         std::string errorMessage = "Error reading chat history file!";
         sendResponse(clientSocket, errorMessage); // Zakładając, że funkcja sendResponse wysyła odpowiedź na wiadomość.
     }
+    pthread_mutex_unlock(&messageFileMutex);
 }
 
 void *handleClient(void *arg)
@@ -368,8 +386,13 @@ void *handleClient(void *arg)
     int clientSocket = *((int *)arg);
     char buffer[1024];
     ssize_t bytesRead;
+
+    pthread_mutex_unlock(&usersFileMutex);
     std::ifstream file("usersData/usersInfo.json");
     json data = json::parse(file);
+    file.close();
+    pthread_mutex_unlock(&usersFileMutex);
+
     std::string userFriends;
     std::cout << "Klient polaczony i gotowy do pracy!\n";
     std::string currentUsername, currentPassword;
@@ -526,6 +549,9 @@ int main()
             close(clientSocket);
         }
     }
+
+    pthread_mutex_destroy(&usersFileMutex);
+    pthread_mutex_destroy(&messageFileMutex);
 
     close(serverSocket);
     return 0;
